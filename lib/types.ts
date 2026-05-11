@@ -3,6 +3,7 @@
 // ===========================
 
 export type AgentMode =
+  | 'chat'
   | 'autonomous'
   | 'coding'
   | 'debugging'

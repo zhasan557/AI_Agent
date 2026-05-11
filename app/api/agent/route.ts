@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { SYSTEM_PROMPTS } from '@/lib/agent-config';
 import { AgentMode } from '@/lib/types';
+import { searchWeb, needsWebSearch, formatSearchContext } from '@/lib/search';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -12,7 +13,7 @@ const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages, mode = 'autonomous', conversationHistory = [] } = body;
+    const { messages, mode = 'chat', conversationHistory = [] } = body;
 
     if (!process.env.GROQ_API_KEY) {
       return new Response(
@@ -24,7 +25,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = SYSTEM_PROMPTS[mode as AgentMode] || SYSTEM_PROMPTS.autonomous;
+    const userMessage = messages[messages.length - 1]?.content || '';
+    let systemPrompt = SYSTEM_PROMPTS[mode as AgentMode] || SYSTEM_PROMPTS.chat;
+
+    // ===========================
+    // Auto Web Search Detection
+    // ===========================
+    let searchContext = '';
+    let searchPerformed = false;
+
+    if (needsWebSearch(userMessage) && process.env.TAVILY_API_KEY) {
+      console.log(`🔍 Web search triggered for: "${userMessage.substring(0, 80)}..."`);
+
+      const searchResults = await searchWeb(userMessage);
+
+      if (searchResults.results.length > 0) {
+        searchContext = formatSearchContext(searchResults);
+        searchPerformed = true;
+        console.log(`✅ Found ${searchResults.results.length} results`);
+      }
+    }
+
+    // Enrich system prompt with search context if available
+    if (searchPerformed && searchContext) {
+      systemPrompt += `\n\n===== REAL-TIME WEB SEARCH CONTEXT =====\nThe following web search was automatically performed to help you answer the user's question with up-to-date information. Use these results to give an accurate, current answer.\n${searchContext}`;
+    }
+
+    // If search was needed but no Tavily key configured
+    if (needsWebSearch(userMessage) && !process.env.TAVILY_API_KEY) {
+      systemPrompt += `\n\nNOTE: The user is asking about something that may require current/real-time information. You don't have web search enabled. Answer with what you know, but be transparent about your knowledge cutoff date. Suggest the user can enable web search by adding a TAVILY_API_KEY to get real-time answers.`;
+    }
 
     // Build message array (OpenAI format)
     const apiMessages = [
@@ -35,7 +65,7 @@ export async function POST(req: NextRequest) {
       })),
       {
         role: 'user' as const,
-        content: messages[messages.length - 1]?.content || '',
+        content: userMessage,
       },
     ];
 
@@ -74,6 +104,15 @@ export async function POST(req: NextRequest) {
         if (!reader) {
           controller.close();
           return;
+        }
+
+        // Send search indicator if search was performed
+        if (searchPerformed) {
+          const searchIndicator = JSON.stringify({
+            type: 'text',
+            content: '🔍 *Searched the web for real-time information...*\n\n',
+          });
+          controller.enqueue(encoder.encode(`data: ${searchIndicator}\n\n`));
         }
 
         let buffer = '';
@@ -149,7 +188,8 @@ export async function GET() {
       status: 'NEXUS Agent API is running',
       provider: 'Groq',
       model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
-      modes: 9,
+      webSearch: !!process.env.TAVILY_API_KEY ? 'enabled' : 'disabled',
+      modes: 10,
     }),
     { headers: { 'Content-Type': 'application/json' } }
   );

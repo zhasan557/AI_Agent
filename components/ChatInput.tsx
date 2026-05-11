@@ -243,6 +243,7 @@ export default function ChatInput({
 
 function getPlaceholder(mode: AgentMode): string {
   const placeholders: Record<AgentMode, string> = {
+    chat: 'ask anything — chat, learn, explore',
     autonomous: 'build a complete full-stack application',
     coding: 'write production-ready code for',
     debugging: 'debug and fix this issue',
@@ -253,7 +254,7 @@ function getPlaceholder(mode: AgentMode): string {
     optimization: 'optimize the performance of',
     prompt: 'engineer the perfect prompt for',
   };
-  return placeholders[mode] || 'build something amazing';
+  return placeholders[mode] || 'ask anything or build something amazing';
 }
 
 function hexToRgb(hex: string): string {

@@ -123,6 +123,7 @@ export default function Header({
               <InfoRow label="Provider" value="Groq (fast inference)" />
               <InfoRow label="Max Tokens" value="8,192 tokens" />
               <InfoRow label="Streaming" value="Enabled (SSE)" />
+              <InfoRow label="Web Search" value="Tavily (auto-detect)" />
               <InfoRow label="Modes" value={`${AGENT_MODES.length} specialized`} />
               <InfoRow
                 label="Current Mode"

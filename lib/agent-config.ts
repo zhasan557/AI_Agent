@@ -5,9 +5,19 @@ import { AgentMode, ModeConfig } from './types';
 // ===========================
 export const AGENT_MODES: ModeConfig[] = [
   {
+    id: 'chat',
+    name: 'General Chat',
+    description: 'Conversational AI assistant — ask anything, get helpful answers like ChatGPT',
+    icon: '💬',
+    color: '#3b82f6',
+    gradient: 'from-blue-500 to-sky-600',
+    badge: 'badge-cyan',
+    systemPromptKey: 'chat',
+  },
+  {
     id: 'autonomous',
-    name: 'Autonomous',
-    description: 'Full-stack autonomous engineering mode — plan, build, and deploy complete solutions',
+    name: 'Build Mode',
+    description: 'Full-stack autonomous engineering — plan, build, and deploy complete solutions',
     icon: '🤖',
     color: '#6366f1',
     gradient: 'from-indigo-500 to-purple-600',
@@ -17,7 +27,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'coding',
     name: 'Coding',
-    description: 'Expert software engineer mode — write clean, production-ready code',
+    description: 'Expert software engineer — write clean, production-ready code',
     icon: '💻',
     color: '#06b6d4',
     gradient: 'from-cyan-500 to-blue-600',
@@ -27,7 +37,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'debugging',
     name: 'Debugging',
-    description: 'Advanced debugging mode — find and fix bugs with root cause analysis',
+    description: 'Advanced debugging — find and fix bugs with root cause analysis',
     icon: '🔍',
     color: '#f97316',
     gradient: 'from-orange-500 to-red-600',
@@ -37,7 +47,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'design',
     name: 'UI/UX Design',
-    description: 'Premium UI/UX designer mode — create stunning, modern interfaces',
+    description: 'Premium UI/UX designer — create stunning, modern interfaces',
     icon: '🎨',
     color: '#ec4899',
     gradient: 'from-pink-500 to-rose-600',
@@ -47,7 +57,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'devops',
     name: 'DevOps',
-    description: 'Infrastructure and deployment mode — Docker, CI/CD, cloud deployments',
+    description: 'Infrastructure and deployment — Docker, CI/CD, cloud deployments',
     icon: '⚙️',
     color: '#10b981',
     gradient: 'from-emerald-500 to-teal-600',
@@ -57,7 +67,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'research',
     name: 'AI Research',
-    description: 'AI research mode — explore architectures, algorithms, and implementations',
+    description: 'AI research — explore architectures, algorithms, and implementations',
     icon: '🔬',
     color: '#8b5cf6',
     gradient: 'from-violet-500 to-purple-600',
@@ -67,7 +77,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'security',
     name: 'Security',
-    description: 'Security audit mode — identify vulnerabilities and implement best practices',
+    description: 'Security audit — identify vulnerabilities and implement best practices',
     icon: '🔒',
     color: '#ef4444',
     gradient: 'from-red-500 to-rose-700',
@@ -77,7 +87,7 @@ export const AGENT_MODES: ModeConfig[] = [
   {
     id: 'optimization',
     name: 'Optimization',
-    description: 'Performance optimization mode — speed, efficiency, and scalability',
+    description: 'Performance optimization — speed, efficiency, and scalability',
     icon: '⚡',
     color: '#eab308',
     gradient: 'from-yellow-500 to-orange-600',
@@ -100,7 +110,43 @@ export const AGENT_MODES: ModeConfig[] = [
 // System Prompts for Each Mode
 // ===========================
 export const SYSTEM_PROMPTS: Record<AgentMode, string> = {
+  chat: `You are NEXUS — a highly intelligent, friendly, and versatile AI assistant. You behave like ChatGPT: conversational, helpful, knowledgeable, and natural.
+
+CORE BEHAVIOR:
+- Answer ANY question the user asks — general knowledge, news, science, math, history, culture, advice, explanations, opinions, creative writing, brainstorming, and more
+- Be conversational and natural. Chat like a knowledgeable friend
+- Give direct, helpful answers. Don't overcomplicate simple questions
+- If the user asks for opinions or recommendations, give thoughtful, balanced responses
+- Use markdown formatting for readability when appropriate (headers, lists, bold, etc.)
+- Be warm, engaging, and concise. Don't be robotic
+- Adapt your tone to the conversation — casual for casual chats, professional for professional questions
+
+WEB SEARCH CAPABILITY:
+- You have access to real-time web search. When search results are provided in your context, USE THEM to give accurate, up-to-date answers
+- When citing information from search results, reference the source number like [1], [2], etc.
+- Present search-based answers in a clean, organized format with key facts highlighted
+- If search results are provided, ALWAYS use them — don't ignore them or fall back to your training data for that topic
+- If NO search results are provided for a current events question, be transparent about your knowledge cutoff
+
+WHAT YOU ARE NOT IN THIS MODE:
+- You are NOT a code generator by default. Don't produce code unless the user explicitly asks for it
+- You are NOT a project builder. Don't create project plans unless asked
+- You are NOT limited to any topic. You can discuss anything
+
+SPECIAL CASES:
+- If the user asks you to "build", "create", "make", "develop", or "code" something → then and only then provide code, architecture, and implementation details
+- If the user asks about programming concepts → explain them clearly, include code examples only when helpful
+- If the user pastes code and asks about it → analyze and help
+- For everything else → just be a great conversational AI
+
+FORMATTING:
+- Use markdown naturally: **bold** for emphasis, lists for multiple items, headers for long responses
+- Keep responses appropriately sized: short questions get short answers, complex questions get detailed ones
+- Use emojis sparingly and naturally when they add value`,
+
   autonomous: `You are NEXUS — an elite autonomous AI engineering agent with the capabilities of a Senior Software Engineer, AI Architect, UI/UX Designer, DevOps Engineer, Product Manager, and Prompt Engineer combined.
+
+IMPORTANT: This mode is specifically for BUILDING and CREATING software. The user has switched to Build Mode, so they want you to generate code and build things.
 
 Your mission: Transform any user command into a complete, production-ready solution.
 
@@ -264,14 +310,14 @@ Output: Complete prompt templates, workflow designs, prompt evaluation criteria,
 // Quick Command Suggestions
 // ===========================
 export const QUICK_COMMANDS = [
+  { icon: '💬', label: 'Explain a concept', prompt: 'Explain how machine learning works in simple terms' },
+  { icon: '📰', label: 'Latest in AI', prompt: 'What are the latest developments in AI and large language models?' },
+  { icon: '💡', label: 'Creative ideas', prompt: 'Give me 10 creative app ideas that could be built with AI' },
   { icon: '🚀', label: 'Build a SaaS app', prompt: 'Build a complete SaaS project management tool with authentication, team collaboration, and analytics dashboard' },
   { icon: '🤖', label: 'Create an AI chatbot', prompt: 'Create a production-ready AI chatbot with RAG, streaming responses, and conversation memory' },
   { icon: '📊', label: 'Analytics dashboard', prompt: 'Build a real-time analytics dashboard with charts, KPIs, and data filtering capabilities' },
-  { icon: '🛒', label: 'E-commerce platform', prompt: 'Develop a full e-commerce platform with product catalog, cart, payments, and order management' },
-  { icon: '🎮', label: 'Build a game', prompt: 'Create an engaging browser-based game with modern graphics and multiplayer capability' },
-  { icon: '📱', label: 'Mobile app', prompt: 'Build a React Native mobile app with authentication, offline support, and push notifications' },
-  { icon: '🔐', label: 'Security audit', prompt: 'Conduct a comprehensive security audit of my application and provide fixes for all vulnerabilities' },
-  { icon: '⚡', label: 'Optimize performance', prompt: 'Analyze and optimize my application performance — reduce load time, improve Core Web Vitals, optimize database queries' },
+  { icon: '📝', label: 'Write an essay', prompt: 'Write a detailed essay about the future of artificial intelligence and its impact on society' },
+  { icon: '🧠', label: 'Learn something', prompt: 'Teach me about quantum computing — explain it like I\'m a beginner' },
 ];
 
 // ===========================

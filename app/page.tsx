@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 export default function HomePage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  const [currentMode, setCurrentMode] = useState<AgentMode>('autonomous');
+  const [currentMode, setCurrentMode] = useState<AgentMode>('chat');
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [showModeSelector, setShowModeSelector] = useState(false);

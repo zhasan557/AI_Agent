@@ -64,7 +64,7 @@ export default function WelcomeScreen({
             </span>
           </h1>
           <p className="text-surface-400 text-sm mt-1 font-medium tracking-wide uppercase">
-            Autonomous AI Engineering Agent
+            Your AI Assistant & Engineering Agent
           </p>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function WelcomeScreen({
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={14} className="text-surface-500" />
           <p className="text-xs font-medium text-surface-500 uppercase tracking-wider">
-            Quick Commands
+            Try These
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -147,21 +147,21 @@ export default function WelcomeScreen({
 
       {/* Disclaimer */}
       <p className="text-xs text-surface-700 text-center mt-8 max-w-md">
-        NEXUS uses Groq-powered LLaMA 3.3 to autonomously analyze, plan, and implement complete solutions.
-        Powered by the{' '}
-        <span className="text-surface-600">Autonomous Engineering Framework v2.0</span>
+        NEXUS is your all-in-one AI — chat naturally, ask questions, get answers. Switch to Build Mode when you want to create apps, websites, and more.
+        Powered by{' '}
+        <span className="text-surface-600">Groq LLaMA 3.3 · 10 Specialized Modes</span>
       </p>
     </div>
   );
 }
 
 const CAPABILITIES = [
-  { icon: '🏗️', label: 'Full-Stack Dev' },
+  { icon: '💬', label: 'General Chat' },
+  { icon: '🏗️', label: 'Build Apps' },
   { icon: '🤖', label: 'AI Integration' },
   { icon: '🎨', label: 'UI/UX Design' },
-  { icon: '⚙️', label: 'DevOps' },
-  { icon: '🔒', label: 'Security' },
-  { icon: '⚡', label: 'Optimization' },
+  { icon: '🧠', label: 'Learn Anything' },
+  { icon: '⚡', label: 'Code & Debug' },
 ];
 
 function hexToRgb(hex: string): string {

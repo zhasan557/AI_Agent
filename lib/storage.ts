@@ -36,7 +36,7 @@ export function loadConversations(): Conversation[] {
   }
 }
 
-export function createConversation(mode: AgentMode = 'autonomous'): Conversation {
+export function createConversation(mode: AgentMode = 'chat'): Conversation {
   return {
     id: uuidv4(),
     title: 'New Conversation',
