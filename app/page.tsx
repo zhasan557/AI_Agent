@@ -9,6 +9,7 @@ import {
   createMessage,
   generateTitle,
 } from '@/lib/storage';
+import { AttachedFile, formatFilesForPrompt } from '@/components/FileUpload';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import MessageList from '@/components/MessageList';
@@ -96,7 +97,7 @@ export default function HomePage() {
   // ===========================
   // Send Message & Stream
   // ===========================
-  const handleSend = useCallback(async (content: string) => {
+  const handleSend = useCallback(async (content: string, files?: AttachedFile[]) => {
     if (isStreaming) return;
 
     // Create conversation if none active
@@ -111,8 +112,16 @@ export default function HomePage() {
       conv = newConv;
     }
 
-    // Create user message
-    const userMsg = createMessage('user', content, currentMode);
+    // Create user message — show clean text in UI
+    const displayContent = files && files.length > 0
+      ? `${content}\n\n📎 *${files.length} file${files.length > 1 ? 's' : ''} attached: ${files.map(f => f.name).join(', ')}*`
+      : content;
+    const userMsg = createMessage('user', displayContent, currentMode);
+
+    // Build the actual content for the API — includes file data
+    const apiContent = files && files.length > 0
+      ? content + formatFilesForPrompt(files)
+      : content;
 
     // Add user message to conversation
     setConversations((prev) =>
@@ -150,7 +159,7 @@ export default function HomePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{ role: 'user', content }],
+          messages: [{ role: 'user', content: apiContent }],
           mode: currentMode,
           conversationHistory: history,
         }),

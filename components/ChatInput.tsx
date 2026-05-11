@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent, DragEvent } from 'react';
 import { AgentMode } from '@/lib/types';
 import { QUICK_COMMANDS, getMode } from '@/lib/agent-config';
+import FileUpload, { AttachedFile } from './FileUpload';
 import {
   Send,
   Square,
-  Mic,
   Paperclip,
   Sparkles,
   ChevronUp,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, files?: AttachedFile[]) => void;
   onStop: () => void;
   isStreaming: boolean;
   currentMode: AgentMode;
@@ -32,7 +32,9 @@ export default function ChatInput({
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [showQuickCommands, setShowQuickCommands] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const modeConfig = getMode(currentMode);
 
   // Auto-resize textarea
@@ -45,9 +47,12 @@ export default function ChatInput({
 
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming) return;
-    onSend(trimmed);
+    if ((!trimmed && attachedFiles.length === 0) || isStreaming) return;
+
+    const message = trimmed || 'Analyze the attached file(s)';
+    onSend(message, attachedFiles.length > 0 ? attachedFiles : undefined);
     setInput('');
+    setAttachedFiles([]);
     setShowQuickCommands(false);
   };
 
@@ -64,8 +69,60 @@ export default function ChatInput({
     textareaRef.current?.focus();
   };
 
+  // Drag & drop on the input area
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // FileUpload component handles file processing through its own handlers
+  };
+
+  const handlePaperclipClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newFiles: AttachedFile[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 512 * 1024) continue; // Skip too-large files
+
+      try {
+        const content = await readFileContent(file);
+        const ext = getFileExtension(file.name);
+        newFiles.push({
+          name: file.name,
+          size: file.size,
+          extension: ext,
+          content,
+          language: getLanguage(ext),
+        });
+      } catch {
+        // Skip unreadable files
+      }
+    }
+
+    if (newFiles.length > 0) {
+      setAttachedFiles((prev) => {
+        const combined = [...prev, ...newFiles];
+        return combined.slice(0, 5); // Max 5 files
+      });
+    }
+
+    // Reset input so same file can be selected again
+    e.target.value = '';
+  };
+
   const charCount = input.length;
   const isLong = charCount > 500;
+  const canSend = input.trim() || attachedFiles.length > 0;
 
   return (
     <div className="relative">
@@ -108,6 +165,16 @@ export default function ChatInput({
         </div>
       )}
 
+      {/* Hidden file input for paperclip button */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        onChange={handleFileInputChange}
+        className="hidden"
+        id="paperclip-file-input"
+      />
+
       {/* Main Input Container */}
       <div
         className="rounded-2xl transition-all duration-200"
@@ -139,6 +206,33 @@ export default function ChatInput({
 
           <div className="flex-1" />
 
+          {/* Attach File Button */}
+          <button
+            onClick={handlePaperclipClick}
+            id="attach-file-btn"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all"
+            style={{
+              color: attachedFiles.length > 0 ? '#a5b8fd' : '#64748b',
+              background: attachedFiles.length > 0 ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
+              border: `1px solid ${attachedFiles.length > 0 ? 'rgba(99, 102, 241, 0.3)' : 'transparent'}`,
+            }}
+            title="Attach files (text, code, JSON, CSV, etc.)"
+          >
+            <Paperclip size={12} />
+            <span>Attach</span>
+            {attachedFiles.length > 0 && (
+              <span
+                className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full text-[9px] font-bold"
+                style={{
+                  background: 'rgba(99, 102, 241, 0.3)',
+                  color: '#c7d7fe',
+                }}
+              >
+                {attachedFiles.length}
+              </span>
+            )}
+          </button>
+
           {/* Quick Commands Toggle */}
           <button
             onClick={() => setShowQuickCommands(!showQuickCommands)}
@@ -157,6 +251,17 @@ export default function ChatInput({
           </button>
         </div>
 
+        {/* Attached Files Preview */}
+        {attachedFiles.length > 0 && (
+          <div className="px-4 pt-3">
+            <FileUpload
+              attachedFiles={attachedFiles}
+              onFilesChange={setAttachedFiles}
+              disabled={disabled}
+            />
+          </div>
+        )}
+
         {/* Textarea */}
         <div className="px-4 py-3">
           <textarea
@@ -164,7 +269,11 @@ export default function ChatInput({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`Ask NEXUS to ${getPlaceholder(currentMode)}...`}
+            placeholder={
+              attachedFiles.length > 0
+                ? 'What would you like to do with the attached file(s)?'
+                : `Ask NEXUS to ${getPlaceholder(currentMode)}...`
+            }
             id="chat-input"
             disabled={disabled}
             rows={1}
@@ -182,10 +291,17 @@ export default function ChatInput({
             </span>
           )}
 
+          {/* File count */}
+          {attachedFiles.length > 0 && (
+            <span className="text-xs text-brand-400">
+              📎 {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''} attached
+            </span>
+          )}
+
           <div className="flex-1" />
 
           {/* Keyboard hint */}
-          {input && !isStreaming && (
+          {canSend && !isStreaming && (
             <span className="text-[10px] text-surface-700 hidden sm:block">
               Enter to send · Shift+Enter for newline
             </span>
@@ -209,21 +325,21 @@ export default function ChatInput({
           ) : (
             <button
               onClick={handleSend}
-              disabled={!input.trim() || disabled}
+              disabled={!canSend || disabled}
               id="send-btn"
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{
                 background:
-                  input.trim()
+                  canSend
                     ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
                     : 'rgba(255, 255, 255, 0.04)',
-                border: input.trim()
+                border: canSend
                   ? 'none'
                   : '1px solid rgba(255, 255, 255, 0.06)',
-                color: input.trim() ? 'white' : '#475569',
-                boxShadow: input.trim() ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
-                cursor: input.trim() ? 'pointer' : 'not-allowed',
-                transform: input.trim() ? 'none' : 'scale(0.98)',
+                color: canSend ? 'white' : '#475569',
+                boxShadow: canSend ? '0 4px 15px rgba(99, 102, 241, 0.4)' : 'none',
+                cursor: canSend ? 'pointer' : 'not-allowed',
+                transform: canSend ? 'none' : 'scale(0.98)',
               }}
             >
               <Send size={14} />
@@ -235,12 +351,15 @@ export default function ChatInput({
 
       {/* Helper text */}
       <p className="text-center text-[10px] text-surface-700 mt-2">
-        NEXUS can make mistakes. Verify important information.
+        NEXUS can make mistakes. Verify important information. Drop files anywhere to attach.
       </p>
     </div>
   );
 }
 
+// ===========================
+// Helpers
+// ===========================
 function getPlaceholder(mode: AgentMode): string {
   const placeholders: Record<AgentMode, string> = {
     chat: 'ask anything — chat, learn, explore',
@@ -255,6 +374,37 @@ function getPlaceholder(mode: AgentMode): string {
     prompt: 'engineer the perfect prompt for',
   };
   return placeholders[mode] || 'ask anything or build something amazing';
+}
+
+function readFileContent(file: globalThis.File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+function getFileExtension(name: string): string {
+  const lastDot = name.lastIndexOf('.');
+  if (lastDot === -1) return '';
+  return name.substring(lastDot).toLowerCase();
+}
+
+function getLanguage(ext: string): string {
+  const langMap: Record<string, string> = {
+    '.js': 'javascript', '.jsx': 'javascript',
+    '.ts': 'typescript', '.tsx': 'typescript',
+    '.py': 'python', '.java': 'java',
+    '.cpp': 'cpp', '.c': 'c',
+    '.go': 'go', '.rs': 'rust',
+    '.html': 'html', '.css': 'css',
+    '.json': 'json', '.yaml': 'yaml', '.yml': 'yaml',
+    '.md': 'markdown', '.txt': 'text',
+    '.csv': 'csv', '.sql': 'sql',
+    '.sh': 'bash', '.xml': 'xml',
+  };
+  return langMap[ext] || 'text';
 }
 
 function hexToRgb(hex: string): string {
