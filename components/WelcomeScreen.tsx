@@ -64,7 +64,7 @@ export default function WelcomeScreen({
             </span>
           </h1>
           <p className="text-surface-400 text-sm mt-1 font-medium tracking-wide uppercase">
-            Your AI Assistant & Engineering Agent
+            Autonomous AI Engineering Intelligence
           </p>
         </div>
       </div>
@@ -147,9 +147,9 @@ export default function WelcomeScreen({
 
       {/* Disclaimer */}
       <p className="text-xs text-surface-700 text-center mt-8 max-w-md">
-        NEXUS is your all-in-one AI — chat naturally, ask questions, get answers. Switch to Build Mode when you want to create apps, websites, and more.
+        NEXUS is your all-in-one AI — chat naturally, search the web in real-time, train ML models, or switch to Build Mode to engineer complete production systems autonomously.
         Powered by{' '}
-        <span className="text-surface-600">Groq LLaMA 3.3 · 10 Specialized Modes</span>
+        <span className="text-surface-600">Groq LLaMA 3.3 · 11 Specialized Modes · Web Search · ML Training</span>
       </p>
     </div>
   );
@@ -157,11 +157,14 @@ export default function WelcomeScreen({
 
 const CAPABILITIES = [
   { icon: '💬', label: 'General Chat' },
-  { icon: '🏗️', label: 'Build Apps' },
-  { icon: '🤖', label: 'AI Integration' },
+  { icon: '🏗️', label: 'Build Systems' },
+  { icon: '🤖', label: 'AI Engineering' },
   { icon: '🎨', label: 'UI/UX Design' },
-  { icon: '🧠', label: 'Learn Anything' },
+  { icon: '🌐', label: 'Web Search' },
+  { icon: '🧪', label: 'ML Training' },
+  { icon: '🛡️', label: 'Security Audit' },
   { icon: '⚡', label: 'Code & Debug' },
+  { icon: '📎', label: 'File Analysis' },
 ];
 
 function hexToRgb(hex: string): string {

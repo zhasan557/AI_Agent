@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Conversation, AgentMode } from '@/lib/types';
 import { AGENT_MODES, getMode } from '@/lib/agent-config';
 import { formatTime, createConversation } from '@/lib/storage';
@@ -12,6 +13,7 @@ import {
   ChevronRight,
   Cpu,
   Zap,
+  FlaskConical,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -177,6 +179,24 @@ export default function Sidebar({
                 );
               })
           )}
+        </div>
+      )}
+
+      {/* Training Playground Link */}
+      {!collapsed && (
+        <div className="px-3 pb-1">
+          <Link
+            href="/train"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200"
+            style={{
+              background: 'rgba(20, 184, 166, 0.08)',
+              border: '1px solid rgba(20, 184, 166, 0.2)',
+              color: '#5eead4',
+            }}
+          >
+            <FlaskConical size={14} />
+            <span>ML Training Playground</span>
+          </Link>
         </div>
       )}
 

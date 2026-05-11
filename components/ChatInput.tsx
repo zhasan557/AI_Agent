@@ -89,14 +89,33 @@ export default function ChatInput({
     const files = e.target.files;
     if (!files) return;
 
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    const PARTIAL_THRESHOLD = 1 * 1024 * 1024; // 1MB
+
     const newFiles: AttachedFile[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (file.size > 512 * 1024) continue; // Skip too-large files
+
+      if (file.size > MAX_SIZE) {
+        // Show visible error via a temporary state or just alert
+        alert(`⚠️ File "${file.name}" is too large (${(file.size / (1024*1024)).toFixed(1)}MB). Max: 10MB.\n\nFor large CSV datasets, use the ML Training Playground at /train.`);
+        continue;
+      }
 
       try {
-        const content = await readFileContent(file);
+        let content: string;
         const ext = getFileExtension(file.name);
+
+        if (file.size > PARTIAL_THRESHOLD) {
+          // Large file — read only first 500KB to get first 2000 lines
+          const slice = file.slice(0, 512 * 1024);
+          const partialText = await readFileContent(slice as any);
+          const lines = partialText.split('\n').slice(0, 2000);
+          content = lines.join('\n') + `\n\n[... FILE TRUNCATED: showing first ${lines.length} lines of ${(file.size / 1024).toFixed(0)}KB file ...]`;
+        } else {
+          content = await readFileContent(file);
+        }
+
         newFiles.push({
           name: file.name,
           size: file.size,
@@ -105,7 +124,7 @@ export default function ChatInput({
           language: getLanguage(ext),
         });
       } catch {
-        // Skip unreadable files
+        alert(`Failed to read: ${file.name}`);
       }
     }
 
@@ -372,6 +391,7 @@ function getPlaceholder(mode: AgentMode): string {
     security: 'audit security vulnerabilities in',
     optimization: 'optimize the performance of',
     prompt: 'engineer the perfect prompt for',
+    training: 'train an ML model — describe your task or upload data',
   };
   return placeholders[mode] || 'ask anything or build something amazing';
 }

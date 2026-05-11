@@ -70,7 +70,9 @@ const SUPPORTED_EXTENSIONS: Record<string, string> = {
   '.prettierrc': 'application/json',
 };
 
-const MAX_FILE_SIZE = 512 * 1024; // 512KB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE_FOR_FULL_READ = 1 * 1024 * 1024; // 1MB — above this, read partial
+const MAX_LINES_LARGE_FILE = 2000; // For files >1MB, only read first N lines
 const MAX_FILES = 5;
 
 export interface AttachedFile {
@@ -133,11 +135,36 @@ export default function FileUpload({
 
     // Check size
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File too large: ${file.name} (${formatFileSize(file.size)}). Max: 512KB`);
+      setError(`File too large: ${file.name} (${formatFileSize(file.size)}). Max: 10MB. For large CSVs, use the ML Training Playground at /train.`);
       return null;
     }
 
-    // Read content
+    // For large files, read only the first portion
+    if (file.size > MAX_FILE_SIZE_FOR_FULL_READ) {
+      return new Promise((resolve) => {
+        // Read first 500KB to extract first N lines
+        const slice = file.slice(0, 512 * 1024);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const partial = e.target?.result as string;
+          const lines = partial.split('\n');
+          const truncatedLines = lines.slice(0, MAX_LINES_LARGE_FILE);
+          const content = truncatedLines.join('\n');
+          const totalLinesEstimate = Math.round((file.size / (partial.length || 1)) * lines.length);
+          resolve({
+            name: file.name,
+            size: file.size,
+            extension: ext,
+            content: content + `\n\n[... FILE TRUNCATED: showing first ${truncatedLines.length} of ~${totalLinesEstimate.toLocaleString()} estimated lines (${formatFileSize(file.size)} total) ...]`,
+            language: getLanguage(ext),
+          });
+        };
+        reader.onerror = () => { setError(`Failed to read: ${file.name}`); resolve(null); };
+        reader.readAsText(slice);
+      });
+    }
+
+    // Normal read for small files
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -251,7 +278,7 @@ export default function FileUpload({
             <Upload size={48} className="text-brand-400" />
             <p className="text-lg font-semibold text-brand-300">Drop files here</p>
             <p className="text-sm text-surface-500">
-              Text, code, JSON, CSV, and more — up to 512KB each
+              Text, code, JSON, CSV, and more — up to 10MB
             </p>
           </div>
         </div>

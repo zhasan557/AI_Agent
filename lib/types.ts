@@ -12,7 +12,8 @@ export type AgentMode =
   | 'research'
   | 'security'
   | 'optimization'
-  | 'prompt';
+  | 'prompt'
+  | 'training';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
