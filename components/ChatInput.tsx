@@ -20,6 +20,7 @@ interface ChatInputProps {
   currentMode: AgentMode;
   onModeClick: () => void;
   disabled?: boolean;
+  modelSelector?: React.ReactNode;
 }
 
 export default function ChatInput({
@@ -28,7 +29,8 @@ export default function ChatInput({
   isStreaming,
   currentMode,
   onModeClick,
-  disabled,
+  disabled = false,
+  modelSelector,
 }: ChatInputProps) {
   const [input, setInput] = useState('');
   const [showQuickCommands, setShowQuickCommands] = useState(false);
@@ -224,6 +226,13 @@ export default function ChatInput({
           </button>
 
           <div className="flex-1" />
+
+          {/* Model Selector (Passed from parent) */}
+          {modelSelector && (
+            <div className="mr-2">
+              {modelSelector}
+            </div>
+          )}
 
           {/* Attach File Button */}
           <button

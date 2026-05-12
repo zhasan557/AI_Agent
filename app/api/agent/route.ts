@@ -8,12 +8,13 @@ export const maxDuration = 300;
 
 // Groq OpenAI-compatible endpoint
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { messages, mode = 'chat', conversationHistory = [] } = body;
+    const { messages, mode = 'chat', conversationHistory = [], modelId, swarmContext } = body;
+    const activeModel = modelId || DEFAULT_MODEL;
 
     if (!process.env.GROQ_API_KEY) {
       return new Response(
@@ -51,6 +52,11 @@ export async function POST(req: NextRequest) {
       systemPrompt += `\n\n===== REAL-TIME WEB SEARCH CONTEXT =====\nThe following web search was automatically performed to help you answer the user's question with up-to-date information. Use these results to give an accurate, current answer.\n${searchContext}`;
     }
 
+    // Inject swarm context for autonomous/build mode
+    if (swarmContext && (mode === 'autonomous' || mode === 'coding')) {
+      systemPrompt += swarmContext;
+    }
+
     // If search was needed but no Tavily key configured
     if (needsWebSearch(userMessage) && !process.env.TAVILY_API_KEY) {
       systemPrompt += `\n\nNOTE: The user is asking about something that may require current/real-time information. You don't have web search enabled. Answer with what you know, but be transparent about your knowledge cutoff date. Suggest the user can enable web search by adding a TAVILY_API_KEY to get real-time answers.`;
@@ -77,7 +83,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
+        model: activeModel,
         messages: apiMessages,
         max_tokens: 8192,
         temperature: 0.7,

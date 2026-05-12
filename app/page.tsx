@@ -10,12 +10,15 @@ import {
   generateTitle,
 } from '@/lib/storage';
 import { AttachedFile, formatFilesForPrompt } from '@/components/FileUpload';
+import { decomposeTask, detectComplexity, formatSwarmContext, SubAgent, recordPattern } from '@/lib/swarm';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import MessageList from '@/components/MessageList';
 import ChatInput from '@/components/ChatInput';
 import WelcomeScreen from '@/components/WelcomeScreen';
 import ModeSelector from '@/components/ModeSelector';
+import SwarmPanel from '@/components/SwarmPanel';
+import ModelSelector from '@/components/ModelSelector';
 import toast from 'react-hot-toast';
 
 export default function HomePage() {
@@ -26,6 +29,9 @@ export default function HomePage() {
   const [streamingContent, setStreamingContent] = useState('');
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
+  const [swarmAgents, setSwarmAgents] = useState<SubAgent[]>([]);
+  const [swarmComplexity, setSwarmComplexity] = useState('simple');
   const abortControllerRef = useRef<AbortController | null>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -154,6 +160,18 @@ export default function HomePage() {
 
     let fullContent = '';
 
+    // Swarm decomposition for build/coding modes
+    let swarmContext = '';
+    if (currentMode === 'autonomous' || currentMode === 'coding') {
+      const complexity = detectComplexity(apiContent);
+      const agents = decomposeTask(apiContent);
+      setSwarmAgents(agents);
+      setSwarmComplexity(complexity);
+      swarmContext = formatSwarmContext(agents, complexity);
+    } else {
+      setSwarmAgents([]);
+    }
+
     try {
       const response = await fetch('/api/agent', {
         method: 'POST',
@@ -162,6 +180,8 @@ export default function HomePage() {
           messages: [{ role: 'user', content: apiContent }],
           mode: currentMode,
           conversationHistory: history,
+          modelId: selectedModel,
+          swarmContext,
         }),
         signal: controller.signal,
       });
@@ -258,7 +278,7 @@ export default function HomePage() {
       setStreamingContent('');
       abortControllerRef.current = null;
     }
-  }, [isStreaming, activeConvId, activeConversation, currentMode]);
+  }, [isStreaming, activeConvId, activeConversation, currentMode, selectedModel]);
 
   const handleStop = useCallback(() => {
     abortControllerRef.current?.abort();
@@ -350,6 +370,13 @@ export default function HomePage() {
               streamingContent={streamingContent}
             />
           )}
+
+          {/* Swarm Panel — shows above input when agents are active */}
+          <SwarmPanel
+            agents={swarmAgents}
+            complexity={swarmComplexity}
+            isVisible={swarmAgents.length > 1 && isStreaming}
+          />
         </div>
 
         {/* Chat Input */}
@@ -361,6 +388,9 @@ export default function HomePage() {
             currentMode={currentMode}
             onModeClick={() => setShowModeSelector(true)}
             disabled={false}
+            modelSelector={
+              <ModelSelector selectedModel={selectedModel} onModelChange={setSelectedModel} />
+            }
           />
         </div>
       </main>
